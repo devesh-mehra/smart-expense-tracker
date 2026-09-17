@@ -89,8 +89,8 @@ export function Categories() {
             animate={{ height: "auto", opacity: 1, scale: 1, y: 0 }}
             exit={{ height: 0, opacity: 0, scale: 0.96, y: -8 }}
             transition={{
-              height: { type: "spring", stiffness: 320, damping: 32 },
-              opacity: { duration: 0.18 },
+              height: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+              opacity: { duration: 0.2 },
               scale: { type: "spring", stiffness: 400, damping: 26 },
             }}
             style={{ overflow: "hidden", transformOrigin: "top" }}
