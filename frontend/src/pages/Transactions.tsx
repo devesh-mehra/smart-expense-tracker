@@ -5,7 +5,7 @@ import { transactionsApi, categoriesApi } from "../api/endpoints";
 import type { Transaction, Category, TransactionType } from "../types";
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 }
 
 export function Transactions() {
@@ -112,7 +112,7 @@ export function Transactions() {
                   </select>
                 </label>
                 <label>
-                  Amount
+                  Amount (₹)
                   <input
                     type="number"
                     step="0.01"
