@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { categoriesApi } from "../api/endpoints";
 import type { Category, TransactionType } from "../types";
@@ -10,6 +11,7 @@ const COLOR_OPTIONS = [
 ];
 
 export function Categories() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -17,6 +19,7 @@ export function Categories() {
   const [type, setType] = useState<TransactionType>("expense");
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -43,10 +46,21 @@ export function Categories() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this category? Transactions using it will become uncategorized.")) return;
+  const handleDelete = (e: MouseEvent, id: number) => {
+    e.stopPropagation();
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (confirmDeleteId == null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     setCategories((prev) => prev.filter((c) => c.id !== id));
     await categoriesApi.delete(id);
+  };
+
+  const viewTransactions = (id: number) => {
+    navigate(`/transactions?category=${id}`);
   };
 
   const expenseCategories = categories.filter((c) => c.type === "expense");
@@ -159,10 +173,12 @@ export function Categories() {
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 40, scale: 0.94, transition: { duration: 0.2 } }}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    onClick={() => viewTransactions(c.id)}
+                    title="View transactions in this category"
                   >
                     <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
                     {c.name}
-                    <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
+                    <button className="btn-icon" onClick={(e) => handleDelete(e, c.id)} title="Delete">
                       🗑
                     </button>
                   </motion.li>
@@ -182,10 +198,12 @@ export function Categories() {
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 40, scale: 0.94, transition: { duration: 0.2 } }}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    onClick={() => viewTransactions(c.id)}
+                    title="View transactions in this category"
                   >
                     <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
                     {c.name}
-                    <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
+                    <button className="btn-icon" onClick={(e) => handleDelete(e, c.id)} title="Delete">
                       🗑
                     </button>
                   </motion.li>
@@ -195,6 +213,38 @@ export function Categories() {
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {confirmDeleteId !== null && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setConfirmDeleteId(null)}
+          >
+            <motion.div
+              className="modal-card"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 8 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
+            >
+              <h3>Delete this category?</h3>
+              <p>Transactions using it will become uncategorized.</p>
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => setConfirmDeleteId(null)}>
+                  Cancel
+                </button>
+                <button className="btn-danger" onClick={confirmDelete}>
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

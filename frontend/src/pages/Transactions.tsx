@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { transactionsApi, categoriesApi } from "../api/endpoints";
 import type { Transaction, Category, TransactionType } from "../types";
@@ -9,11 +10,15 @@ function formatCurrency(n: number) {
 }
 
 export function Transactions() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryFilter = searchParams.get("category");
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<TransactionType>("expense");
@@ -70,10 +75,31 @@ export function Transactions() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this transaction?")) return;
+  const handleDelete = (id: number) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (confirmDeleteId == null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     setTransactions((prev) => prev.filter((t) => t.id !== id));
     await transactionsApi.delete(id);
+  };
+
+  const filteredCategoryName = categoryFilter
+    ? categories.find((c) => String(c.id) === categoryFilter)?.name
+    : null;
+
+  const visibleTransactions = useMemo(() => {
+    if (!categoryFilter) return transactions;
+    return transactions.filter((t) => String(t.category?.id ?? "") === categoryFilter);
+  }, [transactions, categoryFilter]);
+
+  const clearCategoryFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("category");
+    setSearchParams(next);
   };
 
   return (
@@ -89,6 +115,15 @@ export function Transactions() {
           {showForm ? "Cancel" : "+ Add Transaction"}
         </motion.button>
       </div>
+
+      {filteredCategoryName && (
+        <div className="filter-chip">
+          Filtered by category: <strong>{filteredCategoryName}</strong>
+          <button className="btn-icon" onClick={clearCategoryFilter} title="Clear filter">
+            ✕
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
           {error && (
@@ -185,6 +220,8 @@ export function Transactions() {
         <div className="page-loading">Loading...</div>
       ) : transactions.length === 0 ? (
         <p className="empty-state">No transactions yet. Add your first one above.</p>
+      ) : visibleTransactions.length === 0 ? (
+        <p className="empty-state">No transactions in this category yet.</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">
@@ -200,7 +237,7 @@ export function Transactions() {
             </thead>
             <tbody>
               <AnimatePresence initial={false}>
-                {transactions.map((t) => (
+                {visibleTransactions.map((t) => (
                   <motion.tr
                     key={t.id}
                     layout
@@ -239,6 +276,38 @@ export function Transactions() {
           </table>
         </div>
       )}
+
+      <AnimatePresence>
+        {confirmDeleteId !== null && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setConfirmDeleteId(null)}
+          >
+            <motion.div
+              className="modal-card"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 8 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
+            >
+              <h3>Delete this transaction?</h3>
+              <p>This action cannot be undone.</p>
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => setConfirmDeleteId(null)}>
+                  Cancel
+                </button>
+                <button className="btn-danger" onClick={confirmDelete}>
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
