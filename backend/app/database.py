@@ -3,11 +3,17 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.config import settings
 
+# Render (and some other hosts) hand out "postgres://" URLs, but SQLAlchemy 1.4+
+# only recognizes the "postgresql://" scheme.
+database_url = settings.database_url
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
 connect_args = {}
-if settings.database_url.startswith("sqlite"):
+if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
-engine = create_engine(settings.database_url, connect_args=connect_args)
+engine = create_engine(database_url, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
