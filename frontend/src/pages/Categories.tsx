@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { categoriesApi } from "../api/endpoints";
 import type { Category, TransactionType } from "../types";
 
@@ -44,8 +45,8 @@ export function Categories() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this category? Transactions using it will become uncategorized.")) return;
+    setCategories((prev) => prev.filter((c) => c.id !== id));
     await categoriesApi.delete(id);
-    loadData();
   };
 
   const expenseCategories = categories.filter((c) => c.type === "expense");
@@ -55,50 +56,75 @@ export function Categories() {
     <div className="categories-page">
       <div className="page-header">
         <h1>Categories</h1>
-        <button className="btn-primary" onClick={() => setShowForm((s) => !s)}>
+        <motion.button
+          className="btn-primary"
+          onClick={() => setShowForm((s) => !s)}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+        >
           {showForm ? "Cancel" : "+ Add Category"}
-        </button>
+        </motion.button>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
 
-      {showForm && (
-        <form className="inline-form" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <label>
-              Name
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Travel"
-              />
-            </label>
-            <label>
-              Type
-              <select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-              </select>
-            </label>
-          </div>
-          <div className="color-picker">
-            {COLOR_OPTIONS.map((c) => (
-              <button
-                type="button"
-                key={c}
-                className={`color-swatch ${color === c ? "selected" : ""}`}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
-          </div>
-          <button className="btn-primary" type="submit">
-            Save Category
-          </button>
-        </form>
-      )}
+      <AnimatePresence initial={false}>
+        {showForm && (
+          <motion.div
+            key="form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <form className="inline-form" onSubmit={handleSubmit}>
+              <div className="form-row">
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Travel"
+                  />
+                </label>
+                <label>
+                  Type
+                  <select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </label>
+              </div>
+              <div className="color-picker">
+                {COLOR_OPTIONS.map((c) => (
+                  <motion.button
+                    type="button"
+                    key={c}
+                    className={`color-swatch ${color === c ? "selected" : ""}`}
+                    style={{ backgroundColor: c, color: c }}
+                    onClick={() => setColor(c)}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    animate={{ scale: color === c ? 1.15 : 1 }}
+                  />
+                ))}
+              </div>
+              <motion.button
+                className="btn-primary"
+                type="submit"
+                style={{ alignSelf: "flex-start" }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Save Category
+              </motion.button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loading ? (
         <div className="page-loading">Loading...</div>
@@ -107,29 +133,47 @@ export function Categories() {
           <div>
             <h2>Expense Categories</h2>
             <ul className="category-list">
-              {expenseCategories.map((c) => (
-                <li key={c.id}>
-                  <span className="dot" style={{ backgroundColor: c.color }} />
-                  {c.name}
-                  <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
-                    🗑
-                  </button>
-                </li>
-              ))}
+              <AnimatePresence initial={false}>
+                {expenseCategories.map((c) => (
+                  <motion.li
+                    key={c.id}
+                    layout
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
+                    {c.name}
+                    <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
+                      🗑
+                    </button>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           </div>
           <div>
             <h2>Income Categories</h2>
             <ul className="category-list">
-              {incomeCategories.map((c) => (
-                <li key={c.id}>
-                  <span className="dot" style={{ backgroundColor: c.color }} />
-                  {c.name}
-                  <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
-                    🗑
-                  </button>
-                </li>
-              ))}
+              <AnimatePresence initial={false}>
+                {incomeCategories.map((c) => (
+                  <motion.li
+                    key={c.id}
+                    layout
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
+                    {c.name}
+                    <button className="btn-icon" onClick={() => handleDelete(c.id)} title="Delete">
+                      🗑
+                    </button>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           </div>
         </div>

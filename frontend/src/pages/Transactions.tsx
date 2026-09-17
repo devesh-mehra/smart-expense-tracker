@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { transactionsApi, categoriesApi } from "../api/endpoints";
 import type { Transaction, Category, TransactionType } from "../types";
 
@@ -71,122 +72,155 @@ export function Transactions() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this transaction?")) return;
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
     await transactionsApi.delete(id);
-    loadData();
   };
 
   return (
     <div className="transactions-page">
       <div className="page-header">
         <h1>Transactions</h1>
-        <button className="btn-primary" onClick={() => setShowForm((s) => !s)}>
+        <motion.button
+          className="btn-primary"
+          onClick={() => setShowForm((s) => !s)}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+        >
           {showForm ? "Cancel" : "+ Add Transaction"}
-        </button>
+        </motion.button>
       </div>
 
       {error && <div className="error-banner">{error}</div>}
 
-      {showForm && (
-        <form className="inline-form" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <label>
-              Type
-              <select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-              </select>
-            </label>
-            <label>
-              Amount
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-              />
-            </label>
-            <label>
-              Date
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              Category
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">Uncategorized</option>
-                {filteredCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grow">
-              Description
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Groceries at Whole Foods"
-              />
-            </label>
-          </div>
-          <button className="btn-primary" type="submit">
-            Save Transaction
-          </button>
-        </form>
-      )}
+      <AnimatePresence initial={false}>
+        {showForm && (
+          <motion.div
+            key="form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <form className="inline-form" onSubmit={handleSubmit}>
+              <div className="form-row">
+                <label>
+                  Type
+                  <select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </label>
+                <label>
+                  Amount
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </label>
+                <label>
+                  Date
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                </label>
+              </div>
+              <div className="form-row">
+                <label>
+                  Category
+                  <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                    <option value="">Uncategorized</option>
+                    {filteredCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grow">
+                  Description
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. Groceries at Whole Foods"
+                  />
+                </label>
+              </div>
+              <motion.button
+                className="btn-primary"
+                type="submit"
+                style={{ alignSelf: "flex-start" }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Save Transaction
+              </motion.button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loading ? (
         <div className="page-loading">Loading...</div>
       ) : transactions.length === 0 ? (
         <p className="empty-state">No transactions yet. Add your first one above.</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th className="text-right">Amount</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t) => (
-              <tr key={t.id}>
-                <td>{t.date}</td>
-                <td>{t.description || "—"}</td>
-                <td>
-                  {t.category ? (
-                    <span className="category-pill" style={{ backgroundColor: t.category.color + "22", color: t.category.color }}>
-                      {t.category.name}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td>
-                  <span className={`type-badge ${t.type}`}>{t.type}</span>
-                </td>
-                <td className={`text-right amount ${t.type}`}>
-                  {t.type === "income" ? "+" : "-"}
-                  {formatCurrency(t.amount)}
-                </td>
-                <td>
-                  <button className="btn-icon" onClick={() => handleDelete(t.id)} title="Delete">
-                    🗑
-                  </button>
-                </td>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th className="text-right">Amount</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <AnimatePresence initial={false}>
+                {transactions.map((t) => (
+                  <motion.tr
+                    key={t.id}
+                    layout
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 40 }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <td>{t.date}</td>
+                    <td>{t.description || "—"}</td>
+                    <td>
+                      {t.category ? (
+                        <span className="category-pill" style={{ backgroundColor: t.category.color + "22", color: t.category.color }}>
+                          {t.category.name}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      <span className={`type-badge ${t.type}`}>{t.type}</span>
+                    </td>
+                    <td className={`text-right amount ${t.type}`}>
+                      {t.type === "income" ? "+" : "-"}
+                      {formatCurrency(t.amount)}
+                    </td>
+                    <td>
+                      <button className="btn-icon" onClick={() => handleDelete(t.id)} title="Delete">
+                        🗑
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
