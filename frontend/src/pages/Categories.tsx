@@ -66,17 +66,34 @@ export function Categories() {
         </motion.button>
       </div>
 
-      {error && <div className="error-banner">{error}</div>}
+      <AnimatePresence>
+          {error && (
+            <motion.div
+              className="error-banner"
+              initial={{ opacity: 0, height: 0, scale: 0.97 }}
+              animate={{ opacity: 1, height: "auto", scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              style={{ overflow: "hidden" }}
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       <AnimatePresence initial={false}>
         {showForm && (
           <motion.div
             key="form"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
+            initial={{ height: 0, opacity: 0, scale: 0.96, y: -12 }}
+            animate={{ height: "auto", opacity: 1, scale: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, scale: 0.96, y: -8 }}
+            transition={{
+              height: { type: "spring", stiffness: 320, damping: 32 },
+              opacity: { duration: 0.18 },
+              scale: { type: "spring", stiffness: 400, damping: 26 },
+            }}
+            style={{ overflow: "hidden", transformOrigin: "top" }}
           >
             <form className="inline-form" onSubmit={handleSubmit}>
               <div className="form-row">
@@ -138,10 +155,10 @@ export function Categories() {
                   <motion.li
                     key={c.id}
                     layout
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, x: -12, scale: 0.98 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 40, scale: 0.94, transition: { duration: 0.2 } }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   >
                     <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
                     {c.name}
@@ -161,10 +178,10 @@ export function Categories() {
                   <motion.li
                     key={c.id}
                     layout
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, x: -12, scale: 0.98 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 40, scale: 0.94, transition: { duration: 0.2 } }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   >
                     <span className="dot" style={{ backgroundColor: c.color, color: c.color }} />
                     {c.name}
